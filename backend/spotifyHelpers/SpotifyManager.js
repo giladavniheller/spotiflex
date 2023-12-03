@@ -1,4 +1,4 @@
-const { default: UserManager } = require("./UserManager");
+const UserManager = require("./UserManager");
 
 class SpotifyManager {
 
@@ -34,4 +34,6 @@ class SpotifyManager {
 
 }
 
-export default new SpotifyManager();
+module.exports = {
+  SpotifyManager: new SpotifyManager()
+}

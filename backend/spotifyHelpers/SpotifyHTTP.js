@@ -53,5 +53,5 @@ class SpotifyHttp {
 }
 
 module.exports = {
-  SpotifyHttp
+  SpotifyHttp: new SpotifyHttp()
 }

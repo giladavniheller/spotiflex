@@ -1,5 +1,5 @@
-import express from 'express'; 
-import SpotifyManager from './spotifyHelpers/SpotifyManager';
+const express = require('express'); 
+const SpotifyManager = require('./spotifyHelpers/SpotifyManager');
 
 const app = express(); 
 const PORT = 5000; 

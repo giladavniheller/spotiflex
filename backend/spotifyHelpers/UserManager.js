@@ -1,10 +1,10 @@
-import { SpotifyHttp } from "./SpotifyHTTP";
+const SpotifyHttp = require('./SpotifyHTTP');
 
 const REDIRECT_URI = '';
 
 class UserManager {
   constructor() {
-    this.req = SpotifyHttp(); // for authoeized routes
+    this.req = SpotifyHttp; // for authoeized routes
   }
 
   getUserAuthURL() {
@@ -55,4 +55,7 @@ class UserManager {
 
 }
 
-export default new UserManager();
+module.exports = {
+  UserManager: new UserManager()
+}
+
