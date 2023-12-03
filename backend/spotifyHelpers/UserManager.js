@@ -22,7 +22,7 @@ class UserManager {
       response_type: 'code',
       client_id: env.CLIENT_ID,
       scope,
-      redirect_uri: env.REDIRECT_URI,
+      redirect_uri: REDIRECT_URI,
     };
 
     const url = `https://acounts.spoitfy.com/authorize?${new URLSearchParams(params)}`
