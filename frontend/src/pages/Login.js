@@ -20,6 +20,10 @@ const Login = () => {
 		});
 	};
 
+  const login = () => {
+
+  };
+
 	return (
 		<Container component="main">
 			<CssBaseline/>
@@ -67,8 +71,8 @@ const Login = () => {
 							}}
 							label={'Sign In With Spotify'}
 							onClick={() => {
-								console.log('clicked to sign in.');
-							}}
+                window.location.href = '/authorize'
+              }}
 						/>
 					</Stack>
 				</Box>

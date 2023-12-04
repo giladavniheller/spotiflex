@@ -1,8 +1,11 @@
 const express = require('express'); 
-const SpotifyManager = require('./spotifyHelpers/SpotifyManager');
+var cors = require('cors');
+const { spotifyMgr } = require('./spotifyHelpers/SpotifyManager');
 
 const app = express(); 
 const PORT = 5000; 
+
+app.use(cors()); // enalbe ALL origins
 
 app.get('/', (req, res)=>{ 
 	res.status(200); 
@@ -10,13 +13,15 @@ app.get('/', (req, res)=>{
 }); 
 
 app.get('/authorization', (req, res) => {
-  const url = SpotifyManager.getUserAuthURL();
-  req.redirect(url);
+  console.log('GET /authorization');
+  const url = spotifyMgr.getUserAuthURL();
+  res.redirect(url);
 });
 
 app.get('/callback', async (req, res) => {
+  console.log('GET /callback');
   const code = req?.query?.code;
-  const token = SpotifyManager.getUserAccessToken(code);
+  const token = spotifyMgr.getUserAccessToken(code);
 
   res.redirect('/dashbaord');
 });

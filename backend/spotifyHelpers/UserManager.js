@@ -1,6 +1,6 @@
 const SpotifyHttp = require('./SpotifyHTTP');
 
-const REDIRECT_URI = '';
+const REDIRECT_URI = 'localhost:5000';
 
 class UserManager {
   constructor() {
@@ -20,7 +20,7 @@ class UserManager {
 
     const params = {
       response_type: 'code',
-      client_id: env.CLIENT_ID,
+      client_id: process.env.CLIENT_ID,
       scope,
       redirect_uri: REDIRECT_URI,
     };
@@ -31,7 +31,7 @@ class UserManager {
   }
 
   getUserAccessToken(code) {
-    const authStr = `${env.CLIENT_ID}:${env.CLIENT_SECRET}`;
+    const authStr = `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`;
     const authBytes = Buffer.from(authStr, 'utf-8').toString();
     const authB64 = btoa(authBytes);
 
@@ -55,7 +55,8 @@ class UserManager {
 
 }
 
+const userMgr = new UserManager();
 module.exports = {
-  UserManager: new UserManager()
+  userMgr
 }
 

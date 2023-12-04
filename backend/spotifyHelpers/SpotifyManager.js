@@ -1,9 +1,9 @@
-const UserManager = require("./UserManager");
+const { userMgr } = require("./UserManager");
 
 class SpotifyManager {
 
   constructor() {
-    this.userMgr = UserManager;
+    this.userMgr = userMgr;
     this.playlistMgr = null;
     this.dbMgr = null;
   }
@@ -13,11 +13,11 @@ class SpotifyManager {
   }
 
   getUserAuthURL() {
-    return UserManager.getUserAuthURL();
+    return userMgr.getUserAuthURL();
   }
 
   getUserAccessToken(code) {
-    return UserManager.getUserAccessToken(code);
+    return userMgr.getUserAccessToken(code);
   }
 
   getUserTopArtists() {
@@ -34,6 +34,7 @@ class SpotifyManager {
 
 }
 
+const spotifyMgr = new SpotifyManager();
 module.exports = {
-  SpotifyManager: new SpotifyManager()
+  spotifyMgr
 }
