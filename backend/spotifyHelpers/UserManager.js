@@ -1,6 +1,6 @@
 const SpotifyHttp = require('./SpotifyHTTP');
 
-const REDIRECT_URI = 'localhost:5000';
+const REDIRECT_URI = 'http://127.0.0.1:3000/callback'; //callback to frontend
 
 class UserManager {
   constructor() {
@@ -25,12 +25,12 @@ class UserManager {
       redirect_uri: REDIRECT_URI,
     };
 
-    const url = `https://acounts.spoitfy.com/authorize?${new URLSearchParams(params)}`
+    const url = `https://accounts.spotify.com/authorize?${new URLSearchParams(params)}`
 
     return url;
   }
 
-  getUserAccessToken(code) {
+  async getUserAccessToken(code) {
     const authStr = `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`;
     const authBytes = Buffer.from(authStr, 'utf-8').toString();
     const authB64 = btoa(authBytes);
@@ -40,17 +40,23 @@ class UserManager {
       'Authorization': 'Basic' + authB64,
       'Conent-Type': 'application/x-www-form-urlencoded',
     };
+
     const data = {
       'grant-type': 'authorization_code',
       'code': code,
       'redirect_uri': REDIRECT_URI,
     }
 
-    return fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(data)
-    })
+    });
+
+    console.log('body:');
+    console.log(res.body);
+
+    return res;
   }
 
 }

@@ -2,13 +2,12 @@ import {Navigate} from "react-router-dom";
 import {createBrowserHistory} from 'history';
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import CallbackPage from "./pages/Callback";
 
 const browserHistory = createBrowserHistory();
 
-
-const routes = () => {
+const routes = (isLoggedIn) => {
 	const prevPath = browserHistory.location.pathname;
-	const isLoggedIn = false;
 
 	return [
 		{
@@ -16,12 +15,16 @@ const routes = () => {
 			element: <Navigate to={isLoggedIn ? '/home' : '/login'}/>
 		},
 		{
-			path: '/login',
+      path: '/login',
 			element: isLoggedIn ? <Navigate to={(prevPath === '/login') ? '/home' : prevPath}/> : <Login/>
 		},
+    {
+      path: '/callback',
+      element: <CallbackPage />
+    },
 		{
 			path: '/home',
-			element: true ? <Home/> : <Login/>
+			element: isLoggedIn ? <Home/> : <Navigate to={'/login'} />
 		},
 
 	]
