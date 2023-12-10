@@ -9,16 +9,33 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import { useAuth } from '../components/AuthProvider';
 
 const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
 const Home = () => {
+  const { logout } = useAuth();
 	return (
 
 		<main>
 			{/* Hero unit */}
+      <Grid
+        display={'flex'}
+        justifyItems='right'
+        sx={{
+          backgroundColor: 'grey',
+        }}
+      >
+        <Button
+          variant='contained'
+          onClick={logout}
+          sx={{ justifySelf: 'flex-end' }}
+        > 
+          Log Out 
+        </Button>
+      </Grid>
 			<Box
 				sx={{
 					bgcolor: 'background.paper',

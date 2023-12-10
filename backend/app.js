@@ -8,6 +8,7 @@ const PORT = 5000;
 app.use(cors()); // enalbe ALL origins
 
 app.get('/', (req, res)=>{ 
+  console.log('GET /');
 	res.status(200); 
 	res.send("Welcome to root URL of Server"); 
 }); 
@@ -15,20 +16,20 @@ app.get('/', (req, res)=>{
 app.get('/authorization', (req, res) => {
   console.log('GET /authorization');
   const url = spotifyMgr.getUserAuthURL();
-  res.redirect(url);
+  console.log(url);
+  res.json({ url }).status(200);
 });
 
-app.get('/callback', async (req, res) => {
-  console.log('GET /callback');
+app.get('/login', async (req, res) => {
+  console.log('GET /login');
   const code = req?.query?.code;
-  const token = spotifyMgr.getUserAccessToken(code);
-
-  res.redirect('/dashbaord');
-});
-
-app.get('/dashboard', (req, res) => {
+  console.log('code', code);
+  const token = await spotifyMgr.getUserAccessToken(code);
+  console.log('token', token.body);
+  // TODO: verify code
   res.sendStatus(200);
 });
+
 
 app.listen(PORT, (error) => { 
   if (!error) {
