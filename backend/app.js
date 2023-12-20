@@ -1,41 +1,140 @@
-const express = require('express'); 
-var cors = require('cors');
-const { spotifyMgr } = require('./spotifyHelpers/SpotifyManager');
+let express = require('express');
+let request = require('request');
+let cors = require('cors');
+let querystring = require('querystring');
+const axios = require('axios');
 
-const app = express(); 
-const PORT = 5000; 
+let REDIRECT_URI = 'http://localhost:5000/callback';
+const CLIENT_ID = "6d35ce8cf1b84d749e456311ee8c7360";
+const CLIENT_SECRET = "12e3307c4877465f95cc024b1b3295d2";
 
-app.use(cors()); // enalbe ALL origins
+const app = express();
+const PORT = 5000;
 
-app.get('/', (req, res)=>{ 
-	res.status(200); 
-	res.send("Welcome to root URL of Server"); 
-}); 
+app.use(express.static('public'));
+app.use(cors())
+app.use(cors({
+	origin: 'http://localhost:3000',
+	methods: 'GET,POST,PUT,DELETE',
+	credentials: true
+}))
 
-app.get('/authorization', (req, res) => {
-  console.log('GET /authorization');
-  const url = spotifyMgr.getUserAuthURL();
-  res.redirect(url);
+/** - - - - - - - - - - - - - - - - LOGIN AND AUTHENTICATION - - - - - - - - - - - - - - - - **/
+app.get('/login', (req, res) => {
+	res.redirect('https://accounts.spotify.com/authorize?' +
+		querystring.stringify({
+			response_type: 'code',
+			client_id: CLIENT_ID,
+			scope: 'user-read-private user-read-email user-top-read',
+			redirect_uri: REDIRECT_URI,
+			show_dialog: true,
+		}))
 });
 
 app.get('/callback', async (req, res) => {
-  console.log('GET /callback');
-  const code = req?.query?.code;
-  const token = spotifyMgr.getUserAccessToken(code);
-
-  res.redirect('/dashbaord');
+	console.log('in backend callback');
+	let code = req.query.code || null
+	let authOptions = {
+		url: 'https://accounts.spotify.com/api/token',
+		form: {
+			code: code,
+			redirect_uri: REDIRECT_URI,
+			grant_type: 'authorization_code'
+		},
+		headers: {
+			'Authorization': 'Basic ' + (new Buffer(
+				CLIENT_ID + ':' + CLIENT_SECRET
+			).toString('base64'))
+		},
+		json: true
+	}
+	request.post(authOptions, function (error, response, body) {
+		let access_token = body.access_token
+		let uri = 'http://localhost:3000/Home'
+		res.redirect(uri + '?access_token=' + access_token)
+	})
 });
 
-app.get('/dashboard', (req, res) => {
-  res.sendStatus(200);
+/** - - - - - - - - - - - - - - - - SPOTIFY DATA RETRIEVAL - - - - - - - - - - - - - - - - **/
+
+app.get('/userProfile', async (req, res) => {
+	const access_token = req.query.access_token;
+	try {
+		getData(access_token, '/me').then(userInfo => {
+			console.log(`Successfully retrieved user info from spotify`);
+			const responseData = {
+				message: 'Success!',
+				data: userInfo
+			};
+			res.status(200).json(responseData);
+		});
+	} catch (err) {
+		console.error(`Error retrieving user profile: ${error}`);
+		res.status(500).send('Internal Server Error during user profile retrieval');
+	}
 });
 
-app.listen(PORT, (error) => { 
-  if (!error) {
-    console.log("Server is Successfully Running, and App is listening on port "+ PORT) 
-  }
-  else {
-    console.log("Error occurred, server can't start", error); 
-  }
-}); 
+app.get('/topArtists', async (req, res) => {
+	const access_token = req.query.access_token;
+	const time_range = req.query.time_range;
+	const limit = req.query?.limit ?? 10;
+	const offset = req.query?.offset ?? 0;
+	console.log(`Received request for the ${limit} top artist(s) of the past ${time_range} range with an offset of ${offset}`);
 
+	try {
+		getData(access_token, `/me/top/artists?limit=${limit}&offset=${offset}&time_range=${time_range}`).then(topArtists => {
+			console.log(`Successfully retrieved top artists from spotify`);
+			const responseData = {
+				message: 'Success!',
+				data: topArtists
+			};
+			res.status(200).json(responseData);
+		});
+	} catch (err) {
+		console.error(`Error retrieving top artists: ${error}`);
+		res.status(500).send('Internal Server Error during top artist retrieval');
+	}
+});
+
+app.get('/topSongs', async (req, res) => {
+	const access_token = req.query.access_token;
+	const time_range = req.query.time_range;
+	const limit = req.query?.limit ?? 10;
+	const offset = req.query?.offset ?? 0;
+	console.log(`Received request for the ${limit} top song(s) of the past ${time_range} range with an offset of ${offset}`);
+
+	try {
+		getData(access_token, `/me/top/tracks?limit=${limit}&offset=${offset}&time_range=${time_range}`).then(topSongs => {
+			console.log(`Successfully retrieved top songs from spotify`);
+			const responseData = {
+				message: 'Success!',
+				data: topSongs
+			};
+			res.status(200).json(responseData);
+		});
+	} catch (err) {
+		console.error(`Error retrieving top songs: ${error}`);
+		res.status(500).send('Internal Server Error during top song retrieval');
+	}
+});
+
+app.listen(PORT, (error) => {
+	if (!error) {
+		console.log("Server is Successfully Running, and App is listening on port " + PORT)
+	} else {
+		console.log("Error occurred, server can't start", error);
+	}
+});
+
+
+/* - - - - - - - - - - - - - - HELPERS - - - - - - - - - - - - - - - */
+async function getData(accessToken, endpoint) {
+	const response = await axios.get('https://api.spotify.com/v1' + endpoint, {
+		method: 'get',
+		headers: {
+			Authorization: 'Bearer ' + accessToken,
+		},
+	});
+
+	return response.data;
+}
