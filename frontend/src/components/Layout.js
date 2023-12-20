@@ -1,4 +1,5 @@
-import {styled} from "@mui/material";
+import { styled } from "@mui/material";
+import MenuBar from "./MenuBar";
 
 const DashboardLayoutRoot = styled('div')(
 	({theme}) => ({
@@ -13,7 +14,7 @@ const DashboardLayoutRoot = styled('div')(
 
 const Layout = () => (
 	<DashboardLayoutRoot>
-		{/*<Navbar/>*/}
+		<MenuBar/>
 		{/*<Sidebar/>*/}
 
 	</DashboardLayoutRoot>

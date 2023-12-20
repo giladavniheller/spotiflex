@@ -6,23 +6,11 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import Stack from "@mui/material/Stack";
-import {Chip, useTheme} from "@mui/material";
+import { Chip, useTheme } from "@mui/material";
 
 
 const Login = () => {
 	const theme = useTheme();
-	const handleSubmit = (event) => {
-		event.preventDefault();
-		const data = new FormData(event.currentTarget);
-		console.log({
-			email: data.get('email'),
-			password: data.get('password'),
-		});
-	};
-
-  const login = () => {
-
-  };
 
 	return (
 		<Container component="main">
@@ -44,7 +32,7 @@ const Login = () => {
 						SpotiFlex
 					</Typography>
 				</Stack>
-				<Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1}}>
+				<Box sx={{mt: 1}}>
 					<Stack direction={'column'} sx={{alignItems: 'center'}}>
 
 						<Typography sx={{fontSize: '2.5vh', textAlign: 'center', paddingTop: '1vh'}}>
@@ -71,8 +59,8 @@ const Login = () => {
 							}}
 							label={'Sign In With Spotify'}
 							onClick={() => {
-                window.location.href = '/authorize'
-              }}
+								window.location.href = 'http://localhost:5000/login'
+							}}
 						/>
 					</Stack>
 				</Box>
