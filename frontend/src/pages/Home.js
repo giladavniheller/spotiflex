@@ -8,25 +8,33 @@ import { Card, CardContent, CardHeader, CardMedia, Divider, useTheme } from "@mu
 import { getTopArtists, getTopSongs, getUserProfile } from "../helpers/spotifyHelpers";
 import Avatar from "@mui/material/Avatar";
 
-const cards = [1, 2];
-
-
-/*
-http://localhost:3000/Home?
-access_token=BQA0ywk6tJkFJ8akZ4LFklH86VwF7GPOsRXwdNyUn9OB6nCi9h_fDVFPWzcLPjJIff9elxcg3-6rUW064-hByrH9X0Yphfjm3zmpeVQadRy14EqJN7NGbUboIHleCFLMDj7h1m2tqMVjmkqmq_vQ3cuallFNljWoZR7LRxXGpzEiwHRbt6tqcLDfZfUz9Fp4de0
- */
-
-
 const Home = () => {
 	const theme = useTheme();
 	const [userProfile, setUserProfile] = useState({});
 	const [topArtists, setTopArtists] = useState([]);
 	const [topSongs, setTopSongs] = useState([]);
 
-
 	let params = (new URL(document.location)).searchParams;
-	localStorage.setItem('access_token', params.get('access_token') ?? '');
+
+	const urlAccessToken = params.get('access_token');
+	if (urlAccessToken) {
+		console.log('Access token found in url parameters!');
+		localStorage.setItem('access_token', urlAccessToken);
+	}
+
 	const access_token = localStorage.getItem('access_token');
+	if (!access_token) {
+		console.log('No access token found in local storage, looking at url parameters instead.')
+		let params = (new URL(document.location)).searchParams;
+		const urlAccessToken = params.get('access_token');
+		if (urlAccessToken) {
+			console.log('Access token found in url parameters!');
+			localStorage.setItem('access_token', urlAccessToken);
+		} else {
+			console.log('Access token not found in url parameters, need to log in!');
+			window.location.href = 'http://localhost:3000/login'
+		}
+	}
 
 	useEffect(() => {
 		if (access_token !== '') {
@@ -49,6 +57,7 @@ const Home = () => {
 		if (access_token !== '') {
 			getTopSongs(access_token).then(response => {
 				setTopSongs(response.data.items);
+				console.log(response.data.items)
 				// console.log(response.data);
 			});
 		}
@@ -60,7 +69,7 @@ const Home = () => {
 			<Box
 				sx={{
 					bgcolor: 'background.paper',
-					pt: 8,
+					pt: 4,
 					pb: 6,
 					alignItems: 'center'
 				}}
@@ -90,14 +99,14 @@ const Home = () => {
 					</Stack>
 
 					<Typography variant="h5" align="center" color="text.secondary" paragraph>
-						We're so happy you decided to visit our website! Please click around and explore
-						the various features we have to offer! Love ya!!!
+						We're so happy you decided to visit my website! Please click around and explore
+						the various features I have to offer! Love ya!!!
 					</Typography>
 
 				</Container>
 			</Box>
 			<Container sx={{alignItems: 'center'}}>
-				<Stack direction={'row'} spacing={14} sx={{alignItems: 'center'}}>
+				<Stack direction={'row'} spacing={14} sx={{justifyContent: 'center'}}>
 
 					<Card sx={{width: '40%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>
 						<CardHeader

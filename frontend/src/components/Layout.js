@@ -1,5 +1,6 @@
 import { styled } from "@mui/material";
 import MenuBar from "./MenuBar";
+import Stack from "@mui/material/Stack";
 
 const DashboardLayoutRoot = styled('div')(
 	({theme}) => ({
@@ -12,9 +13,13 @@ const DashboardLayoutRoot = styled('div')(
 );
 
 
-const Layout = () => (
-	<DashboardLayoutRoot>
-		<MenuBar/>
+const Layout = ({Page}) => (
+	<DashboardLayoutRoot sx={{width: '100%'}}>
+		<Stack direction={'column'} sx={{width: '100%'}}>
+			<MenuBar/>
+			<Page></Page>
+		</Stack>
+
 		{/*<Sidebar/>*/}
 
 	</DashboardLayoutRoot>

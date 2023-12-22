@@ -1,137 +1,84 @@
-import { AppBar, IconButton, Menu, MenuItem, Toolbar, Tooltip } from "@mui/material";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
+import { AppBar, Button, IconButton, Toolbar, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
-import Avatar from "@mui/material/Avatar";
-
+import MenuIcon from '@mui/icons-material/Menu';
+import HomeIcon from '@mui/icons-material/Home';
+import Stack from "@mui/material/Stack";
+import ColorLensIcon from '@mui/icons-material/ColorLens';
 
 const MenuBar = () => {
-
-	const pages = ['Products', 'Pricing', 'Blog'];
-	const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
+	const theme = useTheme();
 
 	return (
-		<AppBar position="static">
-			<Container maxWidth="xl">
-				<Toolbar disableGutters>
-					{/*<AdbIcon sx={{display: {xs: 'none', md: 'flex'}, mr: 1}}/>*/}
-					<Typography
-						variant="h6"
-						noWrap
-						component="a"
-						href="#app-bar-with-responsive-menu"
-						sx={{
-							mr: 2,
-							display: {xs: 'none', md: 'flex'},
-							fontFamily: 'monospace',
-							fontWeight: 700,
-							letterSpacing: '.3rem',
-							color: 'inherit',
-							textDecoration: 'none',
-						}}
-					>
-						LOGO
-					</Typography>
-
-					<Box sx={{flexGrow: 1, display: {xs: 'flex', md: 'none'}}}>
+		<Box sx={{
+			flexGrow: 1,
+			width: '100%',
+			borderBottom: '2px solid rgba(0, 0, 0, 0.2)',
+		}}>
+			<AppBar position="static">
+				<Toolbar sx={{justifyContent: 'space-between'}}>
+					<Stack direction={'row'}>
 						<IconButton
 							size="large"
-							aria-label="account of current user"
-							aria-controls="menu-appbar"
-							aria-haspopup="true"
-							onClick={handleOpenNavMenu}
+							edge="start"
 							color="inherit"
+							aria-label="menu"
+							sx={{mr: 2}}
 						>
 							<MenuIcon/>
 						</IconButton>
-						<Menu
-							id="menu-appbar"
-							anchorEl={anchorElNav}
-							anchorOrigin={{
-								vertical: 'bottom',
-								horizontal: 'left',
-							}}
-							keepMounted
-							transformOrigin={{
-								vertical: 'top',
-								horizontal: 'left',
-							}}
-							open={Boolean(anchorElNav)}
-							onClose={handleCloseNavMenu}
+						<Button
+							variant="outlined"
 							sx={{
-								display: {xs: 'block', md: 'none'},
+								color: 'black',
+								'&:hover': {
+									backgroundColor: 'rgba(0,0,0,0.1)'
+								}
+							}}
+							onClick={() => {
+								// TODO: add actual logic somehow to sign out of spotify account
+								window.location.href = 'http://localhost:3000/Home'
+							}}
+							startIcon={<HomeIcon sx={{color: 'black'}}/>}
+						>
+							Home
+						</Button>
+						<Button
+							variant="outlined"
+							sx={{
+								color: 'black',
+								'&:hover': {
+									backgroundColor: 'rgba(0,0,0,0.1)'
+								}
+							}}
+							startIcon={<ColorLensIcon sx={{color: 'black'}}/>}
+							onClick={() => {
+								// TODO: add actual logic somehow to sign out of spotify account.
+								// TODO: Might also need to clear local storage for various items.
+								window.location.href = 'http://localhost:3000/Color-picker'
 							}}
 						>
-							{pages.map((page) => (
-								<MenuItem key={page} onClick={handleCloseNavMenu}>
-									<Typography textAlign="center">{page}</Typography>
-								</MenuItem>
-							))}
-						</Menu>
-					</Box>
-					{/*<AdbIcon sx={{display: {xs: 'flex', md: 'none'}, mr: 1}}/>*/}
-					<Typography
-						variant="h5"
-						noWrap
-						component="a"
-						href="#app-bar-with-responsive-menu"
+							Color Tool
+						</Button>
+					</Stack>
+					<Button
 						sx={{
-							mr: 2,
-							display: {xs: 'flex', md: 'none'},
-							flexGrow: 1,
-							fontFamily: 'monospace',
-							fontWeight: 700,
-							letterSpacing: '.3rem',
-							color: 'inherit',
-							textDecoration: 'none',
+							backgroundColor: theme.palette.primary.main,
+							border: '1.5px solid black',
+							'&:hover': {
+								backgroundColor: 'white'
+							}
+						}}
+						onClick={() => {
+							// TODO: add actual logic somehow to sign out of spotify account.
+							// TODO: Might also need to clear local storage for various items.
+							window.location.href = 'http://localhost:3000/Login'
 						}}
 					>
-						LOGO
-					</Typography>
-					<Box sx={{flexGrow: 1, display: {xs: 'none', md: 'flex'}}}>
-						{pages.map((page) => (
-							<Button
-								key={page}
-								onClick={handleCloseNavMenu}
-								sx={{my: 2, color: 'white', display: 'block'}}
-							>
-								{page}
-							</Button>
-						))}
-					</Box>
-
-					<Box sx={{flexGrow: 0}}>
-						<Tooltip title="Open settings">
-							<IconButton onClick={handleOpenUserMenu} sx={{p: 0}}>
-								<Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg"/>
-							</IconButton>
-						</Tooltip>
-						<Menu
-							sx={{mt: '45px'}}
-							id="menu-appbar"
-							anchorEl={anchorElUser}
-							anchorOrigin={{
-								vertical: 'top',
-								horizontal: 'right',
-							}}
-							keepMounted
-							transformOrigin={{
-								vertical: 'top',
-								horizontal: 'right',
-							}}
-							open={Boolean(anchorElUser)}
-							onClose={handleCloseUserMenu}
-						>
-							{settings.map((setting) => (
-								<MenuItem key={setting} onClick={handleCloseUserMenu}>
-									<Typography textAlign="center">{setting}</Typography>
-								</MenuItem>
-							))}
-						</Menu>
-					</Box>
+						<b style={{color: 'black'}}>Log Out</b>
+					</Button>
 				</Toolbar>
-			</Container>
-		</AppBar>
+			</AppBar>
+		</Box>
 	);
 }
 

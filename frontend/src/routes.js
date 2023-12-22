@@ -1,7 +1,9 @@
-import {Navigate} from "react-router-dom";
-import {createBrowserHistory} from 'history';
+import { Navigate } from "react-router-dom";
+import { createBrowserHistory } from 'history';
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import ColorPicker from "./pages/ColorPicker";
+import Layout from "./components/Layout";
 
 const browserHistory = createBrowserHistory();
 
@@ -21,7 +23,11 @@ const routes = () => {
 		},
 		{
 			path: '/home',
-			element: true ? <Home/> : <Login/>
+			element: true ? <Layout Page={Home}/> : <Login/>
+		},
+		{
+			path: '/color-picker',
+			element: true ? <Layout Page={ColorPicker}/> : <Login/>
 		},
 
 	]

@@ -17,3 +17,13 @@ export const getTopSongs = async (access_token, time_range = 'short_term') => {
 	const response = await fetch(`http://localhost:5000/topSongs?access_token=${access_token}&time_range=${time_range}`);
 	return response.json();
 }
+
+export const getAllLikedSongs = async (access_token) => {
+	console.log('requesting all liked songs from spotify');
+	try {
+		const response = await fetch(`http://localhost:5000/allLikedSongs?access_token=${access_token}`);
+		return response.json();
+	} catch (err) {
+		throw new Error('failed retrieving all liked songs');
+	}
+}
