@@ -27,3 +27,26 @@ export const getAllLikedSongs = async (access_token) => {
 		throw new Error('failed retrieving all liked songs');
 	}
 }
+
+export const createNewPlaylist = async (access_token, playlistName, songURIs) => {
+	const userProfileResponse = await getUserProfile(access_token);
+	console.log(`requesting a new playlist called ${playlistName} with songURIs`);
+	try {
+		const data = {
+			playlistName: playlistName,
+			songURIs: songURIs,
+			userId: userProfileResponse.data.id,
+			access_token: access_token,
+		}
+		const response = await fetch(`http://localhost:5000/newPlaylist`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(data)
+		});
+		return await response.json();
+	} catch (err) {
+		throw new Error('failed creating new playlist');
+	}
+}

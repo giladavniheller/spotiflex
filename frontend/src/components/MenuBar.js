@@ -4,6 +4,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import Stack from "@mui/material/Stack";
 import ColorLensIcon from '@mui/icons-material/ColorLens';
+import { logOut } from "../helpers/generalHelpers";
 
 const MenuBar = () => {
 	const theme = useTheme();
@@ -69,9 +70,7 @@ const MenuBar = () => {
 							}
 						}}
 						onClick={() => {
-							// TODO: add actual logic somehow to sign out of spotify account.
-							// TODO: Might also need to clear local storage for various items.
-							window.location.href = 'http://localhost:3000/Login'
+							logOut();
 						}}
 					>
 						<b style={{color: 'black'}}>Log Out</b>

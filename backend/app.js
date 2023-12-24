@@ -3,6 +3,7 @@ let request = require('request');
 let cors = require('cors');
 let querystring = require('querystring');
 const axios = require('axios');
+const {json} = require("express");
 
 let REDIRECT_URI = 'http://localhost:5000/callback';
 const CLIENT_ID = "6d35ce8cf1b84d749e456311ee8c7360";
@@ -12,6 +13,7 @@ const app = express();
 const PORT = 5000;
 
 app.use(express.static('public'));
+app.use(express.json());
 app.use(cors())
 app.use(cors({
 	origin: 'http://localhost:3000',
@@ -25,7 +27,7 @@ app.get('/login', (req, res) => {
 		querystring.stringify({
 			response_type: 'code',
 			client_id: CLIENT_ID,
-			scope: 'user-read-private user-read-email user-top-read user-library-read',
+			scope: 'user-read-private user-read-email user-top-read user-library-read playlist-modify-public playlist-modify-private',
 			redirect_uri: REDIRECT_URI,
 			show_dialog: true,
 		}))
@@ -56,6 +58,56 @@ app.get('/callback', async (req, res) => {
 });
 
 /** - - - - - - - - - - - - - - - - SPOTIFY DATA RETRIEVAL - - - - - - - - - - - - - - - - **/
+
+app.post('/newPlaylist', async (req, res) => {
+
+	console.log(`received post request for a new playlist`);
+	const access_token = req.body.access_token;
+	const playlistName = req.body.playlistName;
+	const songURIs = req.body.songURIs;
+	const userId = req.body.userId;
+
+	// Create the playlist
+	let playlistId;
+	try {
+		const response = await axios.post(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+			name: playlistName,
+			public: true,
+			description: 'A colorful playlist made with SpotiFlex!',
+		}, {
+			headers: {
+				'Authorization': 'Bearer ' + access_token,
+				'Content-Type': 'application/json',
+			},
+		});
+		playlistId = response.data.id;
+	} catch (err) {
+		console.log(`error occurred when making new playlist: ${err}`);
+	}
+
+	if (playlistId) {
+		let startIndex = 0;
+		console.log(`Playlist id found, attempting to add songs...`)
+		while (startIndex < songURIs.length) {
+			try {
+				const response = await axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+					uris: songURIs.slice(startIndex, Math.min(startIndex + 100, songURIs.length)),
+				}, {
+					headers: {
+						'Authorization': 'Bearer ' + access_token,
+						'Content-Type': 'application/json',
+					},
+				});
+				startIndex += 100;
+			} catch (err) {
+				console.log(`error occurred when adding songs to the new playlist ${err}`);
+				startIndex += 1000;
+			}
+		}
+	}
+
+	res.status(200).json({message: 'Playlist created successfully!'});
+})
 
 app.get('/userProfile', async (req, res) => {
 	const access_token = req.query.access_token;
@@ -143,7 +195,7 @@ app.get('/allLikedSongs', async (req, res) => {
 			}
 
 			offset += limit;
-			if (offset > total) { // TODO: change this
+			if (offset > total) {
 				continueGettingSongs = false;
 			}
 		} catch (err) {
@@ -164,7 +216,8 @@ app.get('/allLikedSongs', async (req, res) => {
 			albumId: t.track.album.id,
 			track: t.track.name,
 			url: t.track.album?.images[0]?.url,
-			id: t.track.external_ids?.isrc
+			id: t.track.external_ids?.isrc,
+			uri: t.track.uri,
 		}
 	});
 
