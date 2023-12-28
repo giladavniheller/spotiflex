@@ -182,25 +182,29 @@ app.get('/allLikedSongs', async (req, res) => {
 	let limit = 50;
 	let offset = 0;
 
-	while (continueGettingSongs) {
+	const firstBatch = await getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`);
+	total = firstBatch.total;
+	console.log(`got the first batch with a total of ${total}`);
+
+	const requestsPerBatch = 30;
+	while (offset <= total) {
+		const songBatchPromises = [];
+		const initialOffset = offset;
+		for (let i = 0; i < requestsPerBatch; i++) {
+			songBatchPromises.push(getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`));
+			offset += limit;
+		}
 
 		try {
-			const tracks = await getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`)
-			console.log(`successfully got tracks ${offset}-${offset + limit}`);
-			allTracks.push(...tracks.items);
-
-			if (firstGet) {
-				total = tracks.total;
-				firstGet = false;
-			}
-
-			offset += limit;
-			if (offset > total) {
-				continueGettingSongs = false;
-			}
+			const allResults = await Promise.all(songBatchPromises);
+			allResults.forEach(tracks => {
+				console.log(`successfully got a batch of songs from ${initialOffset}-${offset}`);
+				allTracks.push(...tracks.items);
+			})
 		} catch (err) {
-			console.log(`uh oh, found an error ${err}, waiting five seconds then trying again`);
-			await new Promise(resolve => setTimeout(resolve, 5000));
+			// TODO: try to determine if it's faster to identify the specific failed requests and re-do them, rather than the entire batch
+			console.log(`uh oh, found an error ${err}`);
+			offset -= limit * requestsPerBatch;
 		}
 	}
 

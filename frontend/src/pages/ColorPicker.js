@@ -12,7 +12,6 @@ import {
 	Card,
 	CardContent,
 	CardHeader,
-	CardMedia,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -29,121 +28,43 @@ import { createNewPlaylist, getAllLikedSongs } from "../helpers/spotifyHelpers";
 import { hsvaToHex, hsvaToRgba, Wheel } from "@uiw/react-color";
 import ColorThief from '../../node_modules/colorthief/dist/color-thief.mjs'
 import VerticalStepper from "../components/VerticalStepper";
+import SongRow from "../components/SongRow";
+import { logOut } from "../helpers/generalHelpers";
 
-const SongRow = ({
-									 song,
-									 index,
-									 page,
-									 rowsPerPage,
-									 playlistSongIds,
-									 addOrRemoveSongToPlaylist,
-									 isPlaylistSection = false
-								 }) => {
-	const theme = useTheme();
-	return (
-		<Stack key={`${song.id}${song.albumId}Row`} direction={'row'}
-					 sx={{
-						 width: '100%', height: '80px', alignItems: 'center', justifyContent: 'spaceBetween',
-						 backgroundColor: !isPlaylistSection && playlistSongIds.includes(song.id) ? 'rgba(0, 0, 0, 0.06)' : 'transparent',
-					 }}
-		>
-
-			<Stack key={`${song.id}${song.albumId}InnerRow`} direction={'row'}
-						 sx={{width: '100%', height: '80px', alignItems: 'center'}}>
-				<b
-					key={`${song.id}${song.albumId}Number`}>#{page * rowsPerPage + index + 1}</b> {/* TODO: make the numbers aligned regardless of the number of digits */}
-				<CardMedia
-					key={`${song.id}${song.albumId}Image`}
-					component="img"
-					style={{
-						height: '60px',
-						width: '60px',
-						objectFit: 'cover',
-						marginLeft: '10px',
-						marginRight: '5px',
-						borderRadius: '10%',
-						border: '1px solid rgba(0,0,0,0.1)'
-					}}
-					image={song.url}
-					alt="album cover image"
-				/>
-				<Stack direction={'column'}>
-					<b style={{fontSize: '16px'}}
-						 key={`${song.id}${song.albumId}Title`}>{song.track}</b> {/* TODO: add something that makes the title trail off after a certain length "Mystery of Love (From the..." */}
-					<Typography sx={{fontSize: '13px', margin: '0px', color: theme.palette.primary.grey}}
-											key={`${song.id}${song.albumId}Artist`}
-					>
-						<span style={{fontWeight: 'bold'}}>{song.artists.join(' & ')}</span>, {song.albumName}
-					</Typography>
-				</Stack>
-			</Stack>
-
-			<Tooltip title={isPlaylistSection ? 'Remove song from playlist' : 'Add song to playlist'}>
-				<IconButton onClick={() => {
-					addOrRemoveSongToPlaylist(song);
-				}}>
-					{isPlaylistSection ?
-						<RemoveCircleIcon sx={{
-							color: theme.palette.primary.red,
-							width: '30px',
-							height: '30px'
-						}}/> :
-						<AddCircleIcon sx={{
-							color: playlistSongIds.includes(song.id) ? theme.palette.primary.grey : theme.palette.primary.darkGreen,
-							width: '30px',
-							height: '30px'
-						}}/>
-					}
-				</IconButton>
-			</Tooltip>
-		</Stack>
-	)
-}
+// TODO: might be nice to add a recommended colors area, where I can categorize them into palettes (only include ones with more than X songs in it)
 
 const ColorPicker = () => {
 	const theme = useTheme();
 	const [openConfirmationDialogue, setOpenConfirmationDialogue] = React.useState(false);
 	const [hsva, setHsva] = useState({h: 141, s: 86, v: 84, a: 1});
+	const [isGeneratingAlbumCovers, setIsGeneratingAlbumCovers] = useState(false);
+	const [albumColors, setAlbumColors] = useState({});
+	const [allLikedSongs, setAllLikedSongs] = useState([]);
+	const [colorApplicableSongs, setColorApplicableSongs] = useState([]);
+	const [playlistSongs, setPlaylistSongs] = useState([]);
+	const [playlistName, setPlaylistName] = useState('New Playlist');
 
-	// Pagination for each column
+	// - - - - - - - - - - - - Pagination handling - - - - - - - - - - - - \\
 	const [pageAllSongs, setPageAllSongs] = useState(0);
 	const [pageColor, setPageColor] = useState(0);
 	const [pagePlaylist, setPagePlaylist] = useState(0);
-
 	const [rowsPerPageAllSongs, setRowsPerPageAllSongs] = React.useState(10);
 	const [rowsPerPageColor, setRowsPerPageColor] = React.useState(10);
 	const [rowsPerPagePlaylist, setRowsPerPagePlaylist] = React.useState(10);
+	const handleChangePage = (setterFunction) => (event, newPage) => {
+		setterFunction(newPage);
+	}
+	const handleChangeRowsPerPage = (setRowsPerPageFunction, setPageFunction) => (event) => {
+		setRowsPerPageFunction(parseInt(event.target.value, 10));
+		setPageFunction(0);
+	}
 
-	// TODO: abstract these
-	const handleChangePageAllSongs = (event, newPage) => {
-		setPageAllSongs(newPage);
-	};
-	const handleChangePageColor = (event, newPage) => {
-		setPageColor(newPage);
-	};
-	const handleChangePagePlaylist = (event, newPage) => {
-		setPagePlaylist(newPage);
-	};
-
-	const handleChangeRowsPerPageAllSongs = (event) => {
-		setRowsPerPageAllSongs(parseInt(event.target.value, 10));
-		setPageAllSongs(0);
-	};
-	const handleChangeRowsPerPageColor = (event) => {
-		setRowsPerPageColor(parseInt(event.target.value, 10));
-		setPageColor(0);
-	};
-	const handleChangeRowsPerPagePlaylist = (event) => {
-		setRowsPerPagePlaylist(parseInt(event.target.value, 10));
-		setPagePlaylist(0);
-	};
-
+	// - - - - - - - - - - - - Add/Remove Song handling - - - - - - - - - - - - \\
 	const addSongToPlaylist = (song) => {
 		const currentPlaylist = [...playlistSongs];
 		currentPlaylist.push(song);
 		setPlaylistSongs(currentPlaylist);
 	}
-
 	const addSongsToPlaylist = (songs) => {
 		const currentPlaylist = [...playlistSongs];
 		songs.forEach((song) => {
@@ -153,43 +74,47 @@ const ColorPicker = () => {
 		})
 		setPlaylistSongs(currentPlaylist);
 	}
-
 	const removeSongFromPlaylist = (songToRemove) => {
 		let currentPlaylist = [...playlistSongs];
-		console.log(`currentPlaylist=${JSON.stringify(currentPlaylist)}`);
-		console.log(`song to remove: ${JSON.stringify(songToRemove)}`);
 		currentPlaylist = currentPlaylist.filter((song) => song.id !== songToRemove.id);
 		setPlaylistSongs(currentPlaylist);
 	}
 
-	// TODO: might be nice to add a recommended colors area, where I can categorize them into palettes (only include ones with more than X songs in it)
+	// - - - - - - - - - - - - Color Profile Generation handling - - - - - - - - - - - - \\
+	const [albumUrl0, setAlbumUrl0] = useState(''); // TODO: PLEASE see if this can be abstracted
+	const [albumUrl1, setAlbumUrl1] = useState('');
+	const [albumUrl2, setAlbumUrl2] = useState('');
+	const [albumUrl3, setAlbumUrl3] = useState('');
+	const [albumUrl4, setAlbumUrl4] = useState('');
+	const [albumUrl5, setAlbumUrl5] = useState('');
+	const [albumUrl6, setAlbumUrl6] = useState('');
+	const [albumUrl7, setAlbumUrl7] = useState('');
+	const [albumUrl8, setAlbumUrl8] = useState(''); // TODO: see if adding more album image tags makes it faster
+	const albumUrls = [albumUrl0, albumUrl1, albumUrl2, albumUrl3, albumUrl4, albumUrl5, albumUrl6, albumUrl7, albumUrl8];
+	const setAlbumUrl = (index, url) => {
+		const setAlbumUrlFunctions = [setAlbumUrl0, setAlbumUrl1, setAlbumUrl2, setAlbumUrl3, setAlbumUrl4, setAlbumUrl5, setAlbumUrl6, setAlbumUrl7, setAlbumUrl8];
+		const setFunc = setAlbumUrlFunctions[index];
+		if (setFunc) {
+			setFunc(url);
+		}
+	}
 
-	const [isGeneratingAlbumCovers, setIsGeneratingAlbumCovers] = useState(false);
-	const [currentAlbumUrl, setCurrentAlbumUrl] = useState('');
-	const [albumColors, setAlbumColors] = useState({});
-	const [allLikedSongs, setAllLikedSongs] = useState([]);
-	const [colorApplicableSongs, setColorApplicableSongs] = useState([]);
-	const [playlistSongs, setPlaylistSongs] = useState([]);
-	const [playlistName, setPlaylistName] = useState('New Playlist');
-
+	// Attempt to retrieve access token from local storage, completely log out if not found
 	const access_token = localStorage.getItem('access_token');
 	if (!access_token) {
-		console.log('No access token found in local storage, need to log in!');
-		window.location.href = 'http://localhost:3000/login';
-		// TODO: might be good to make a common function that clears any cached data and navigates you to the log-in page.
+		logOut();
 	}
 
 	useEffect(() => {
-		console.log('in a useEffect...');
 		if (access_token !== '') {
 			if (localStorage.getItem('album_colors')) {
+				console.log('found album colors')
 				setAlbumColors(JSON.parse(localStorage.getItem('album_colors')));
 			}
 		}
 	}, []);
 
 	useEffect(() => {
-		console.log('in the useEffect');
 		if (access_token !== '') {
 			if (localStorage.getItem('allSongs')) {
 				console.log('Found liked songs in local storage!')
@@ -228,6 +153,69 @@ const ColorPicker = () => {
 			button will change to \'GENERATE\', indicating you are free to begin creating new playlists!`,
 		},
 	];
+
+	const generateColorProfiles = async () => {
+		setIsGeneratingAlbumCovers(true);
+		await new Promise(resolve => setTimeout(resolve, 100));
+
+		let likedSongsCopy = [...allLikedSongs];
+		let uniqueAlbumIds = new Set();
+		const albumToColor = {};
+
+		// Filter the list of songs to have only one entry per albumId
+		likedSongsCopy = likedSongsCopy.filter(song => {
+			const isUnique = !uniqueAlbumIds.has(song.albumId);
+			if (isUnique) uniqueAlbumIds.add(song.albumId);
+			return isUnique;
+		});
+		console.log('successfully filtered items to be unique by album');
+
+		const waitUntilImageLoaded = (image, expectedUrl) => {
+			return new Promise(resolve => {
+				if ((image?.complete ?? false) && image.src === expectedUrl) {
+					resolve();
+				} else {
+					image.addEventListener('load', resolve);
+				}
+			});
+		};
+
+		const processBatch = async (batchIndex, batch) => {
+			// Instantiate Color Thief
+			const colorThief = new ColorThief();
+
+			for (const song of batch) {
+				if (!song.url) {
+					continue;
+				}
+				setAlbumUrl(batchIndex, song.url);
+				const albumCoverImage = document.getElementById(`album_cover_${batchIndex}`);
+				await waitUntilImageLoaded(albumCoverImage, song.url);
+
+				try {
+					albumToColor[song.albumId] = await colorThief.getColor(albumCoverImage, 1);
+				} catch (err) {
+					console.log(`Batch ${batchIndex}: ran into error for ${song.track}: ${err}`);
+				}
+			}
+		};
+
+		const numberOfBatches = 9;
+		const batchSize = Math.ceil(likedSongsCopy.length / numberOfBatches);
+		const batches = Array.from({length: numberOfBatches}, (_, index) =>
+			likedSongsCopy.slice(index * batchSize, (index + 1) * batchSize)
+		);
+
+		await Promise.all(batches.map((batch, batchIndex) => processBatch(batchIndex, batch)));
+
+		setIsGeneratingAlbumCovers(false);
+		setAlbumColors(albumToColor);
+		localStorage.setItem('album_colors', JSON.stringify(albumToColor));
+
+		// TODO: add an alert here that the color profiles are done generating
+		console.log('ooh!');
+		console.log(albumToColor);
+	}
 
 
 	return (
@@ -270,9 +258,7 @@ const ColorPicker = () => {
 						marginTop: '15px',
 						background: hsvaToHex(hsva)
 					}}>
-						{/*<Typography>{hsvaToHex(hsva)} —*/}
-						{/*	({hsvaToRgba(hsva).r},{hsvaToRgba(hsva).g},{hsvaToRgba(hsva).b})</Typography>*/}
-						<Button
+						<Button // TODO: don't let this button be pressed for initialize colors if allSongs still being fetched
 							sx={{
 								backgroundColor: 'transparent',
 								width: '100%',
@@ -288,7 +274,7 @@ const ColorPicker = () => {
 									// Album cover information already exists
 									const rgb = hsvaToRgba(hsva);
 									const requestedColor = [rgb.r, rgb.g, rgb.b];
-									const threshold = 70;
+									const threshold = 70; // TODO: see if I can make this dynamic based on how far from the center you are, ideally would be stronger threshold further from center, or maybe like a pie slice
 									console.log(requestedColor);
 									let likedSongsCopy = [...allLikedSongs];
 									console.log(likedSongsCopy);
@@ -315,61 +301,7 @@ const ColorPicker = () => {
 									setColorApplicableSongs(filteredSongs);
 								} else {
 									console.log('Need to prep the album colors...');
-									setIsGeneratingAlbumCovers(true);
-
-									const albumToColor = {};
-									const colorThief = new ColorThief();
-									let intermediateTimeMs = 100;
-									let successesWithoutFailures = 0;
-									let likedSongsCopy = [...allLikedSongs];
-
-									for (const song of likedSongsCopy) {
-										if (!albumToColor.hasOwnProperty(song.albumId)) {
-											// Display the image
-											setCurrentAlbumUrl(song.url);
-											await new Promise(resolve => setTimeout(resolve, intermediateTimeMs));
-
-											// Use color thief
-											let colorPalette
-											try {
-												const albumImage = document.getElementById('album_cover');
-												colorPalette = await colorThief.getColor(albumImage, 1); // TODO: investigate if getPalette is slower, might be more accurate to check top three colors...
-												successesWithoutFailures += 1;
-
-												// If you have succeeded ten times in a row, it's probably safe to lower the amount of time between songs
-												if (successesWithoutFailures > 5) {
-													intermediateTimeMs = Math.max(intermediateTimeMs - 10, 0);
-													successesWithoutFailures = 0;
-												}
-											} catch (err) {
-												try {
-													// TODO: dynamically change the timeout based on the number of success/failures
-													await new Promise(resolve => setTimeout(resolve, intermediateTimeMs));
-													const albumImage = document.getElementById('album_cover');
-													colorPalette = await colorThief.getColor(albumImage, 1);
-
-													// Needed to wait extra, increase back up by 10
-													intermediateTimeMs += 10;
-													successesWithoutFailures = 0;
-												} catch (err) {
-													intermediateTimeMs += 5; // TODO: need to fix this
-													successesWithoutFailures = 0;
-													// TODO: need to do something so I'm not losing these albums
-													console.log(`couldn't seem to get the album cover for track ${song.track}, adding it to the back of the list`);
-													// likedSongsCopy.push(song);
-												}
-											}
-
-											// Save result
-											if (colorPalette) {
-												albumToColor[song.albumId] = colorPalette;
-											}
-										}
-									}
-
-									console.log(`done with album cover colors!!`);
-									localStorage.setItem('album_colors', JSON.stringify(albumToColor));
-									setAlbumColors(albumToColor);
+									await generateColorProfiles();
 								}
 							}}
 						>
@@ -389,15 +321,22 @@ const ColorPicker = () => {
 					alignItems: 'center'
 				}}
 			>
-				<Container>
+				{isGeneratingAlbumCovers && <Container>
 					<Stack direction={'row'} spacing={5}>
-						{isGeneratingAlbumCovers && <div style={{padding: '20px'}}>
-							<img src={currentAlbumUrl} alt='current album' width='100px' height='100px' id='album_cover'
-									 crossOrigin='anonymous'/>
-						</div>}
-
+						{albumUrls.map((url, index) => (
+							<div key={index} style={{padding: '5px'}}>
+								<img
+									src={url}
+									alt={`album-${index}`}
+									width='60px'
+									height='60px'
+									id={`album_cover_${index}`}
+									crossOrigin='anonymous'
+								/>
+							</div>
+						))}
 					</Stack>
-				</Container>
+				</Container>}
 				<Container
 					sx={{alignItems: 'center', paddingRight: '0px', paddingLeft: '0px', marginRight: '0px', marginLeft: '0px'}}>
 					<Stack direction={'row'} spacing={6} sx={{justifyContent: 'center', alignItems: 'baseline'}}>
@@ -425,9 +364,9 @@ const ColorPicker = () => {
 								component="div"
 								count={allLikedSongs.length}
 								page={pageAllSongs}
-								onPageChange={handleChangePageAllSongs}
+								onPageChange={handleChangePage(setPageAllSongs)}
 								rowsPerPage={rowsPerPageAllSongs}
-								onRowsPerPageChange={handleChangeRowsPerPageAllSongs}
+								onRowsPerPageChange={handleChangeRowsPerPage(setRowsPerPageAllSongs, setPageAllSongs)}
 							/>
 						</Card>
 
@@ -435,19 +374,21 @@ const ColorPicker = () => {
 						<Card sx={{minWidth: '420px', width: '50%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>
 							<CardHeader
 								action={
-									<Tooltip title={'Add ALL color applicable songs to playlist'}>
-										<IconButton
-											disabled={colorApplicableSongs.length === 0 || colorApplicableSongs.every(applicableSong => playlistSongs.map((playlistSong) => playlistSong.id).includes(applicableSong.id))}
-											onClick={() => {
-												addSongsToPlaylist(colorApplicableSongs)
-											}}
-										>
-											<AddCircleIcon sx={{
-												color: colorApplicableSongs.length === 0 || colorApplicableSongs.every(applicableSong => playlistSongs.map((playlistSong) => playlistSong.id).includes(applicableSong.id)) ? theme.palette.primary.grey : theme.palette.primary.darkGreen,
-												width: '50px',
-												height: '50px'
-											}}/>
-										</IconButton>
+									<Tooltip title={'Add all color applicable songs to playlist'}>
+										<span>
+											<IconButton
+												disabled={colorApplicableSongs.length === 0 || colorApplicableSongs.every(applicableSong => playlistSongs.map((playlistSong) => playlistSong.id).includes(applicableSong.id))}
+												onClick={() => {
+													addSongsToPlaylist(colorApplicableSongs)
+												}}
+											>
+												<AddCircleIcon sx={{
+													color: colorApplicableSongs.length === 0 || colorApplicableSongs.every(applicableSong => playlistSongs.map((playlistSong) => playlistSong.id).includes(applicableSong.id)) ? theme.palette.primary.grey : theme.palette.primary.darkGreen,
+													width: '50px',
+													height: '50px'
+												}}/>
+											</IconButton>
+										</span>
 									</Tooltip>
 								}
 								title="Color Applicable Songs"
@@ -471,9 +412,9 @@ const ColorPicker = () => {
 								component="div"
 								count={colorApplicableSongs.length}
 								page={pageColor}
-								onPageChange={handleChangePageColor}
+								onPageChange={handleChangePage(setPageColor)}
 								rowsPerPage={rowsPerPageColor}
-								onRowsPerPageChange={handleChangeRowsPerPageColor}
+								onRowsPerPageChange={handleChangeRowsPerPage(setRowsPerPageColor, setPageColor)}
 							/>
 						</Card>
 
@@ -497,32 +438,36 @@ const ColorPicker = () => {
 								action={
 									<Stack direction={'row'}>
 										<Tooltip title={'Create new playlist!!!'}>
-											<IconButton disabled={playlistSongs.length === 0}
-																	onClick={async () => {
-																		console.log(`make new playlist: ${playlistName} with access token ${access_token}`);
-																		console.log(`songuris = ${playlistSongs.map((song) => song.uri)}`)
-																		setOpenConfirmationDialogue(true);
-																	}}
-											>
-												<StarsIcon sx={{
-													color: playlistSongs.length === 0 ? theme.palette.primary.grey : theme.palette.primary.main,
-													width: '50px',
-													height: '50px'
-												}}/>
-											</IconButton>
+											<span>
+												<IconButton disabled={playlistSongs.length === 0}
+																		onClick={async () => {
+																			console.log(`make new playlist: ${playlistName} with access token ${access_token}`);
+																			console.log(`songuris = ${playlistSongs.map((song) => song.uri)}`)
+																			setOpenConfirmationDialogue(true);
+																		}}
+												>
+													<StarsIcon sx={{
+														color: playlistSongs.length === 0 ? theme.palette.primary.grey : theme.palette.primary.main,
+														width: '50px',
+														height: '50px'
+													}}/>
+												</IconButton>
+											</span>
 										</Tooltip>
 										<Tooltip title={'Remove ALL songs from playlist'}>
-											<IconButton disabled={playlistSongs.length === 0}
-																	onClick={() => {
-																		setPlaylistSongs([]);
-																	}}
-											>
-												<RemoveCircleIcon sx={{
-													color: playlistSongs.length === 0 ? theme.palette.primary.grey : theme.palette.primary.red,
-													width: '50px',
-													height: '50px'
-												}}/>
-											</IconButton>
+											<span>
+												<IconButton disabled={playlistSongs.length === 0}
+																		onClick={() => {
+																			setPlaylistSongs([]);
+																		}}
+												>
+													<RemoveCircleIcon sx={{
+														color: playlistSongs.length === 0 ? theme.palette.primary.grey : theme.palette.primary.red,
+														width: '50px',
+														height: '50px'
+													}}/>
+												</IconButton>
+											</span>
 										</Tooltip>
 									</Stack>
 
@@ -546,9 +491,9 @@ const ColorPicker = () => {
 								component="div"
 								count={playlistSongs.length}
 								page={pagePlaylist}
-								onPageChange={handleChangePagePlaylist}
+								onPageChange={handleChangePage(setPagePlaylist)}
 								rowsPerPage={rowsPerPagePlaylist}
-								onRowsPerPageChange={handleChangeRowsPerPagePlaylist}
+								onRowsPerPageChange={handleChangeRowsPerPage(setRowsPerPagePlaylist, setPagePlaylist)}
 							/>
 						</Card>
 					</Stack>
@@ -588,6 +533,7 @@ const ColorPicker = () => {
 					}} onClick={async () => {
 						const response = await createNewPlaylist(access_token, playlistName, playlistSongs.map((song) => song.uri));
 						setOpenConfirmationDialogue(false);
+						// TODO: create an action thing here to say that it was successful
 					}} autoFocus>
 						Confirm
 					</Button>
