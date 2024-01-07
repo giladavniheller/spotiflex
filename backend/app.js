@@ -51,9 +51,10 @@ app.get('/callback', async (req, res) => {
 		json: true
 	}
 	request.post(authOptions, function (error, response, body) {
-		let access_token = body.access_token
-		let uri = 'http://localhost:3000/Home'
-		res.redirect(uri + '?access_token=' + access_token)
+		let access_token = body.access_token;
+		let refresh_token = body.refresh_token;
+		let uri = 'http://localhost:3000/Home';
+		res.redirect(uri + '?access_token=' + access_token + `&refresh_token=` + refresh_token);
 	})
 });
 
@@ -175,16 +176,20 @@ app.get('/allLikedSongs', async (req, res) => {
 	console.log('Received request for all liked songs');
 
 	let allTracks = [];
-	let firstGet = true;
 	let total = 0;
-
-	let continueGettingSongs = true;
 	let limit = 50;
 	let offset = 0;
 
-	const firstBatch = await getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`);
-	total = firstBatch.total;
-	console.log(`got the first batch with a total of ${total}`);
+	try {
+		const firstBatch = await getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`);
+		total = firstBatch.total;
+		console.log(`got the first batch with a total of ${total}`);
+	} catch (err) {
+		console.log(`ran into an error: ${err.message}`);
+		res.status(401).json({error: 'The access token expired'});
+		return;
+	}
+
 
 	const requestsPerBatch = 30;
 	while (offset <= total) {

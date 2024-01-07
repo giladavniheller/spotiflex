@@ -59,6 +59,8 @@ const Login = () => {
 							}}
 							label={'Sign In With Spotify'}
 							onClick={() => {
+								localStorage.removeItem('access_token');
+								localStorage.removeItem('refresh_token');
 								window.location.href = 'http://localhost:5000/login'
 							}}
 						/>

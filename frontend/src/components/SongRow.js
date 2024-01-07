@@ -2,7 +2,8 @@ import { CardMedia, IconButton, Tooltip, useTheme } from "@mui/material";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+import ArrowCircleRightIcon from '@mui/icons-material/ArrowCircleRight';
+
 import * as React from "react";
 
 const SongRow = ({
@@ -42,27 +43,41 @@ const SongRow = ({
 					alt="album cover image"
 				/>
 				<Stack direction={'column'}>
-					<b style={{fontSize: '16px'}}
-						 key={`${song.id}${song.albumId}Title`}>{song.track}</b> {/* TODO: add something that makes the title trail off after a certain length "Mystery of Love (From the..." */}
-					<Typography sx={{fontSize: '13px', margin: '0px', color: theme.palette.primary.grey}}
-											key={`${song.id}${song.albumId}Artist`}
+					<b style={{
+						fontSize: '16px',
+						whiteSpace: 'nowrap',
+						overflow: 'hidden',
+						textOverflow: 'ellipsis',
+						width: '240px'
+					}}
+						 key={`${song.id}${song.albumId}Title`}>{song.track}</b> {/* TODO: add a tooltip to display full title when truncated. Might be easier to manually use a function to truncate after a certain number of characters." */}
+					<Typography
+						sx={{
+							fontSize: '13px', margin: '0px', color: theme.palette.primary.grey,
+							whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '240px'
+						}}
+						key={`${song.id}${song.albumId}Artist`}
 					>
 						<span style={{fontWeight: 'bold'}}>{song.artists.join(' & ')}</span>, {song.albumName}
 					</Typography>
 				</Stack>
 			</Stack>
 
-			<Tooltip title={isPlaylistSection ? 'Remove song from playlist' : 'Add song to playlist'}>
-				<IconButton onClick={() => {
-					addOrRemoveSongToPlaylist(song);
-				}}>
+			<Tooltip
+				title={isPlaylistSection ? 'Remove song from playlist' : 'Add song to playlist'}>
+				<IconButton
+					onClick={() => {
+						addOrRemoveSongToPlaylist(song)
+					}}
+					disabled={playlistSongIds.includes(song.id) && !isPlaylistSection}
+				>
 					{isPlaylistSection ?
 						<RemoveCircleIcon sx={{
 							color: theme.palette.primary.red,
 							width: '30px',
 							height: '30px'
 						}}/> :
-						<AddCircleIcon sx={{
+						<ArrowCircleRightIcon sx={{
 							color: playlistSongIds.includes(song.id) ? theme.palette.primary.grey : theme.palette.primary.darkGreen,
 							width: '30px',
 							height: '30px'

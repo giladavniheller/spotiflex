@@ -7,62 +7,73 @@ import Container from '@mui/material/Container';
 import { Card, CardContent, CardHeader, CardMedia, Divider, useTheme } from "@mui/material";
 import { getTopArtists, getTopSongs, getUserProfile } from "../helpers/spotifyHelpers";
 import Avatar from "@mui/material/Avatar";
+import { logOut } from "../helpers/generalHelpers";
 
 const Home = () => {
 	const theme = useTheme();
+	const [accessToken, setAccessToken] = useState('');
 	const [userProfile, setUserProfile] = useState({});
 	const [topArtists, setTopArtists] = useState([]);
 	const [topSongs, setTopSongs] = useState([]);
 
-	let params = (new URL(document.location)).searchParams;
 
-	const urlAccessToken = params.get('access_token');
-	if (urlAccessToken) {
-		console.log('Access token found in url parameters!');
-		localStorage.setItem('access_token', urlAccessToken);
-	}
+	useEffect(() => {
+		console.log('in home page useEffect 0');
 
-	const access_token = localStorage.getItem('access_token');
-	if (!access_token) {
-		console.log('No access token found in local storage, looking at url parameters instead.')
 		let params = (new URL(document.location)).searchParams;
+
 		const urlAccessToken = params.get('access_token');
 		if (urlAccessToken) {
 			console.log('Access token found in url parameters!');
 			localStorage.setItem('access_token', urlAccessToken);
 		} else {
-			console.log('Access token not found in url parameters, need to log in!');
-			window.location.href = 'http://localhost:3000/login'
+			console.log('No access token in url, checking local storage...');
+			const localStorageAccessToken = localStorage.getItem('access_token');
+			if (!localStorageAccessToken) {
+				console.log('No access token found in local storage either... need to log in!')
+				logOut();
+			}
 		}
-	}
+
+		const urlRefreshToken = params.get('refresh_token');
+		if (urlRefreshToken) {
+			console.log('Refresh token found in url parameters!');
+			localStorage.setItem('refresh_token', urlRefreshToken);
+		} else {
+			console.log('No refresh token in url, checking local storage...');
+			const localStorageRefreshToken = localStorage.getItem('refresh_token');
+			if (!localStorageRefreshToken) {
+				console.log('No refresh token found in local storage either... need to log in!')
+				logOut();
+			}
+		}
+
+		setAccessToken(localStorage.getItem('access_token'));
+	}, []);
 
 	useEffect(() => {
-		if (access_token !== '') {
-			getUserProfile(access_token).then(response => {
+		if (accessToken !== '') {
+			getUserProfile(accessToken).then(response => {
 				setUserProfile(response.data);
 			});
 		}
-	}, []);
+	}, [accessToken]);
 
 	useEffect(() => {
-		if (access_token !== '') {
-			getTopArtists(access_token).then(response => {
+		if (accessToken !== '') {
+			getTopArtists(accessToken).then(response => {
 				setTopArtists(response.data.items);
-				// console.log(response.data);
 			});
 		}
-	}, []);
+	}, [accessToken]);
 
 	useEffect(() => {
-		if (access_token !== '') {
-			getTopSongs(access_token).then(response => {
+		if (accessToken !== '') {
+			getTopSongs(accessToken).then(response => {
 				setTopSongs(response.data.items);
-				console.log(response.data.items)
-				// console.log(response.data);
 			});
 		}
-	}, []);
-
+	}, [accessToken]);
 
 	return (
 		<main>
@@ -106,7 +117,7 @@ const Home = () => {
 				</Container>
 			</Box>
 			<Container sx={{alignItems: 'center'}}>
-				<Stack direction={'row'} spacing={14} sx={{justifyContent: 'center'}}>
+				<Stack direction={'row'} spacing={14} sx={{justifyContent: 'center', marginBottom: '40px'}}>
 
 					<Card sx={{width: '40%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>
 						<CardHeader

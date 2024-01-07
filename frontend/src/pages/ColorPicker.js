@@ -27,7 +27,6 @@ import {
 import { createNewPlaylist, getAllLikedSongs } from "../helpers/spotifyHelpers";
 import { hsvaToHex, hsvaToRgba, Wheel } from "@uiw/react-color";
 import ColorThief from '../../node_modules/colorthief/dist/color-thief.mjs'
-import VerticalStepper from "../components/VerticalStepper";
 import SongRow from "../components/SongRow";
 import { logOut } from "../helpers/generalHelpers";
 
@@ -154,7 +153,7 @@ const ColorPicker = () => {
 		},
 	];
 
-	const generateColorProfiles = async () => {
+	const generateColorProfiles = async () => { // TODO: maybe have this automatically happen when you open the page...?
 		setIsGeneratingAlbumCovers(true);
 		await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -236,81 +235,7 @@ const ColorPicker = () => {
 						your liked songs by the primary color(s) of their album covers.
 					</Typography>
 				</Stack>
-				<Stack
-					direction={'column'}
-					sx={{
-						padding: '10px',
-						height: '290px',
-						// width: '350px',
-						borderRadius: '10%',
-
-						alignItems: 'center',
-						marginTop: '15px'
-					}}>
-					<Wheel style={{marginTop: '15px'}} color={hsva} onChange={(color) => setHsva({...hsva, ...color.hsva})}/>
-					<Box sx={{
-						width: '100%',
-						justifyContent: 'center',
-						alignItems: 'center',
-						display: 'flex',
-						height: '39px',
-						borderRadius: '7%',
-						marginTop: '15px',
-						background: hsvaToHex(hsva)
-					}}>
-						<Button // TODO: don't let this button be pressed for initialize colors if allSongs still being fetched
-							sx={{
-								backgroundColor: 'transparent',
-								width: '100%',
-								border: '1.5px solid black',
-								'&:hover': {
-									backgroundColor: 'white'
-								},
-							}}
-							onClick={async () => {
-
-								if (localStorage.getItem('album_colors')) {
-									console.log('Album colors are already found, ready to generate playlist!!!!');
-									// Album cover information already exists
-									const rgb = hsvaToRgba(hsva);
-									const requestedColor = [rgb.r, rgb.g, rgb.b];
-									const threshold = 70; // TODO: see if I can make this dynamic based on how far from the center you are, ideally would be stronger threshold further from center, or maybe like a pie slice
-									console.log(requestedColor);
-									let likedSongsCopy = [...allLikedSongs];
-									console.log(likedSongsCopy);
-									console.log(albumColors);
-									console.log(`albumColors[1st song]: ${albumColors["7DH0auN5IxIWaqFj4SL98o"]}`);
-
-									const filteredSongs = likedSongsCopy.filter(song => {
-										if (albumColors[song.albumId]) {
-											const albumColor = albumColors[song.albumId];
-											// TODO: explore using normal distance formula here instead
-											// const rDiffSquared = (albumColor[0] - requestedColor[0]) * (albumColor[0] - requestedColor[0]);
-											// const gDiffSquared = (albumColor[1] - requestedColor[1]) * (albumColor[1] - requestedColor[1]);
-											// const bDiffSquared = (albumColor[2] - requestedColor[2]) * (albumColor[2] - requestedColor[2]);
-											// return Math.sqrt(rDiffSquared + gDiffSquared + bDiffSquared) <= threshold;
-											return Math.abs(albumColor[0] - requestedColor[0]) <= threshold &&
-												Math.abs(albumColor[1] - requestedColor[1]) <= threshold &&
-												Math.abs(albumColor[2] - requestedColor[2]) <= threshold
-										} else {
-											return false;
-										}
-									})
-									console.log(filteredSongs);
-
-									setColorApplicableSongs(filteredSongs);
-								} else {
-									console.log('Need to prep the album colors...');
-									await generateColorProfiles();
-								}
-							}}
-						>
-							<b
-								style={{color: 'black'}}>{localStorage.getItem('album_colors') ? 'Generate' : 'Initialize Colors'}</b>
-						</Button>
-					</Box>
-				</Stack>
-				<VerticalStepper steps={instructions} width={'350px'}/>
+				{/*<VerticalStepper steps={instructions} width={'350px'}/>*/}
 			</Stack>
 
 			<Stack
@@ -339,36 +264,36 @@ const ColorPicker = () => {
 				</Container>}
 				<Container
 					sx={{alignItems: 'center', paddingRight: '0px', paddingLeft: '0px', marginRight: '0px', marginLeft: '0px'}}>
-					<Stack direction={'row'} spacing={6} sx={{justifyContent: 'center', alignItems: 'baseline'}}>
+					<Stack direction={'row'} spacing={6} sx={{justifyContent: 'center', alignItems: 'flex-start'}}>
 
-						<Card sx={{minWidth: '420px', width: '50%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>
-							<CardHeader
-								title="All Liked Songs" // TODO: maybe add a search feature here
-								subheader="All Time"
-							/>
-							<Divider></Divider>
-							<CardContent>
-								<Stack direction={'column'} divider={<Divider/>}>
-									{allLikedSongs.slice(pageAllSongs * rowsPerPageAllSongs, pageAllSongs * rowsPerPageAllSongs + rowsPerPageAllSongs).map((song, index) => (
-										<SongRow song={song} index={index} page={pageAllSongs} rowsPerPage={rowsPerPageAllSongs}
-														 playlistSongIds={playlistSongs.map(song => song.id)}
-														 addOrRemoveSongToPlaylist={addSongToPlaylist}/>
-									))}
-								</Stack>
-							</CardContent>
-							<TablePagination
-								sx={{
-									paddingLeft: '0px', marginLeft: '0px', transform: 'scale(0.9)',
-								}}
-								showFirstButton={false}
-								component="div"
-								count={allLikedSongs.length}
-								page={pageAllSongs}
-								onPageChange={handleChangePage(setPageAllSongs)}
-								rowsPerPage={rowsPerPageAllSongs}
-								onRowsPerPageChange={handleChangeRowsPerPage(setRowsPerPageAllSongs, setPageAllSongs)}
-							/>
-						</Card>
+						{/*<Card sx={{minWidth: '420px', width: '50%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>*/}
+						{/*	<CardHeader*/}
+						{/*		title="All Liked Songs" // TODO: maybe add a search feature here*/}
+						{/*		subheader="All Time"*/}
+						{/*	/>*/}
+						{/*	<Divider></Divider>*/}
+						{/*	<CardContent>*/}
+						{/*		<Stack direction={'column'} divider={<Divider/>}>*/}
+						{/*			{allLikedSongs.slice(pageAllSongs * rowsPerPageAllSongs, pageAllSongs * rowsPerPageAllSongs + rowsPerPageAllSongs).map((song, index) => (*/}
+						{/*				<SongRow song={song} index={index} page={pageAllSongs} rowsPerPage={rowsPerPageAllSongs}*/}
+						{/*								 playlistSongIds={playlistSongs.map(song => song.id)}*/}
+						{/*								 addOrRemoveSongToPlaylist={addSongToPlaylist}/>*/}
+						{/*			))}*/}
+						{/*		</Stack>*/}
+						{/*	</CardContent>*/}
+						{/*	<TablePagination*/}
+						{/*		sx={{*/}
+						{/*			paddingLeft: '0px', marginLeft: '0px', transform: 'scale(0.9)',*/}
+						{/*		}}*/}
+						{/*		showFirstButton={false}*/}
+						{/*		component="div"*/}
+						{/*		count={allLikedSongs.length}*/}
+						{/*		page={pageAllSongs}*/}
+						{/*		onPageChange={handleChangePage(setPageAllSongs)}*/}
+						{/*		rowsPerPage={rowsPerPageAllSongs}*/}
+						{/*		onRowsPerPageChange={handleChangeRowsPerPage(setRowsPerPageAllSongs, setPageAllSongs)}*/}
+						{/*	/>*/}
+						{/*</Card>*/}
 
 
 						<Card sx={{minWidth: '420px', width: '50%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>
@@ -417,6 +342,81 @@ const ColorPicker = () => {
 								onRowsPerPageChange={handleChangeRowsPerPage(setRowsPerPageColor, setPageColor)}
 							/>
 						</Card>
+
+						<Stack
+							direction={'column'}
+							sx={{
+								padding: '10px',
+								height: '290px',
+								// width: '350px',
+								borderRadius: '10%',
+
+								alignItems: 'center',
+								marginTop: '15px'
+							}}>
+							<Wheel style={{marginTop: '15px'}} color={hsva} onChange={(color) => setHsva({...hsva, ...color.hsva})}/>
+							<Box sx={{
+								width: '100%',
+								justifyContent: 'center',
+								alignItems: 'center',
+								display: 'flex',
+								height: '39px',
+								borderRadius: '7%',
+								marginTop: '15px',
+								background: hsvaToHex(hsva)
+							}}>
+								<Button // TODO: don't let this button be pressed for initialize colors if allSongs still being fetched
+									sx={{
+										backgroundColor: 'transparent',
+										width: '100%',
+										border: '1.5px solid black',
+										'&:hover': {
+											backgroundColor: 'white'
+										},
+									}}
+									onClick={async () => {
+
+										if (localStorage.getItem('album_colors')) {
+											console.log('Album colors are already found, ready to generate playlist!!!!');
+											// Album cover information already exists
+											const rgb = hsvaToRgba(hsva);
+											const requestedColor = [rgb.r, rgb.g, rgb.b];
+											const threshold = 70; // TODO: see if I can make this dynamic based on how far from the center you are, ideally would be stronger threshold further from center, or maybe like a pie slice
+											console.log(requestedColor);
+											let likedSongsCopy = [...allLikedSongs];
+											console.log(likedSongsCopy);
+											console.log(albumColors);
+											console.log(`albumColors[1st song]: ${albumColors["7DH0auN5IxIWaqFj4SL98o"]}`);
+
+											const filteredSongs = likedSongsCopy.filter(song => {
+												if (albumColors[song.albumId]) {
+													const albumColor = albumColors[song.albumId];
+													// TODO: explore using normal distance formula here instead
+													// const rDiffSquared = (albumColor[0] - requestedColor[0]) * (albumColor[0] - requestedColor[0]);
+													// const gDiffSquared = (albumColor[1] - requestedColor[1]) * (albumColor[1] - requestedColor[1]);
+													// const bDiffSquared = (albumColor[2] - requestedColor[2]) * (albumColor[2] - requestedColor[2]);
+													// return Math.sqrt(rDiffSquared + gDiffSquared + bDiffSquared) <= threshold;
+													return Math.abs(albumColor[0] - requestedColor[0]) <= threshold &&
+														Math.abs(albumColor[1] - requestedColor[1]) <= threshold &&
+														Math.abs(albumColor[2] - requestedColor[2]) <= threshold
+												} else {
+													return false;
+												}
+											})
+											console.log(filteredSongs);
+
+											setColorApplicableSongs(filteredSongs);
+										} else {
+											console.log('Need to prep the album colors...');
+											await generateColorProfiles();
+										}
+									}}
+								>
+									<b
+										style={{color: 'black'}}>{localStorage.getItem('album_colors') ? 'Generate' : 'Initialize Colors'}</b> {/* TODO: ensure that you can't initialize colors until the liked songs has been successfully retrieved */}
+								</Button> {/* TODO: probably add a button to re-download the liked songs, this should also clear the album_colors from local storage to ensure that the color initialization must be re-done... unless you manage to keep it around to speed up the second initialization... as there's no need to redo already color-paletted albums*/}
+							</Box>
+						</Stack>
 
 						<Card sx={{minWidth: '420px', width: '50%', boxShadow: '0 0 4px 4px rgba(0, 0, 0, 0.2)'}}>
 							<CardHeader

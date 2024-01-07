@@ -24,7 +24,8 @@ export const getAllLikedSongs = async (access_token) => {
 		const response = await fetch(`http://localhost:5000/allLikedSongs?access_token=${access_token}`);
 		return response.json();
 	} catch (err) {
-		throw new Error('failed retrieving all liked songs');
+		console.log('that is wierd');
+		return {};
 	}
 }
 
