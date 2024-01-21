@@ -31,6 +31,8 @@ import SongRow from "../components/SongRow";
 import { logOut } from "../helpers/generalHelpers";
 
 // TODO: might be nice to add a recommended colors area, where I can categorize them into palettes (only include ones with more than X songs in it)
+// TODO: might be nice to add a button that just makes a playlist with all of your songs sorted into a gradient
+// TODO: might be nice to have an optional button for the playlist to sort them by artist
 
 const ColorPicker = () => {
 	const theme = useTheme();
@@ -98,9 +100,10 @@ const ColorPicker = () => {
 		}
 	}
 
-	// Attempt to retrieve access token from local storage, completely log out if not found
+	// Attempt to retrieve access and refresh tokens from local storage, completely log out if not found
 	const access_token = localStorage.getItem('access_token');
-	if (!access_token) {
+	const refresh_token = localStorage.getItem('refresh_token');
+	if (!access_token || !refresh_token) {
 		logOut();
 	}
 
@@ -114,14 +117,14 @@ const ColorPicker = () => {
 	}, []);
 
 	useEffect(() => {
-		if (access_token !== '') {
+		if (access_token !== '' && refresh_token !== '') {
 			if (localStorage.getItem('allSongs')) {
 				console.log('Found liked songs in local storage!')
 				setAllLikedSongs(JSON.parse(localStorage.getItem('allSongs')));
 			} else {
 				try {
 					console.log('Could not find liked songs in local storage, calling API!')
-					getAllLikedSongs(access_token).then(response => {
+					getAllLikedSongs(access_token, refresh_token).then(response => {
 						setAllLikedSongs(response.data);
 						localStorage.setItem('allSongs', JSON.stringify(response.data));
 						console.log(response.data)
@@ -437,7 +440,8 @@ const ColorPicker = () => {
 								}
 								action={
 									<Stack direction={'row'}>
-										<Tooltip title={'Create new playlist!!!'}>
+										<Tooltip
+											title={'Create new playlist!!!'}> {/* TODO: add a success/failure banner on top so users know it was successfully created */}
 											<span>
 												<IconButton disabled={playlistSongs.length === 0}
 																		onClick={async () => {

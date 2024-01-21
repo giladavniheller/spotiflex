@@ -12,6 +12,7 @@ import { logOut } from "../helpers/generalHelpers";
 const Home = () => {
 	const theme = useTheme();
 	const [accessToken, setAccessToken] = useState('');
+	const [refreshToken, setRefreshToken] = useState('');
 	const [userProfile, setUserProfile] = useState({});
 	const [topArtists, setTopArtists] = useState([]);
 	const [topSongs, setTopSongs] = useState([]);
@@ -21,7 +22,6 @@ const Home = () => {
 		console.log('in home page useEffect 0');
 
 		let params = (new URL(document.location)).searchParams;
-
 		const urlAccessToken = params.get('access_token');
 		if (urlAccessToken) {
 			console.log('Access token found in url parameters!');
@@ -33,6 +33,7 @@ const Home = () => {
 				console.log('No access token found in local storage either... need to log in!')
 				logOut();
 			}
+			console.log('Access token found in local storage, all good!');
 		}
 
 		const urlRefreshToken = params.get('refresh_token');
@@ -46,34 +47,36 @@ const Home = () => {
 				console.log('No refresh token found in local storage either... need to log in!')
 				logOut();
 			}
+			console.log('Refresh token found in local storage, all good!');
 		}
 
 		setAccessToken(localStorage.getItem('access_token'));
+		setRefreshToken(localStorage.getItem('refresh_token'));
 	}, []);
 
 	useEffect(() => {
 		if (accessToken !== '') {
-			getUserProfile(accessToken).then(response => {
+			getUserProfile(accessToken, refreshToken).then(response => {
 				setUserProfile(response.data);
 			});
 		}
-	}, [accessToken]);
+	}, [accessToken, refreshToken]);
 
 	useEffect(() => {
 		if (accessToken !== '') {
-			getTopArtists(accessToken).then(response => {
+			getTopArtists(accessToken, refreshToken).then(response => {
 				setTopArtists(response.data.items);
 			});
 		}
-	}, [accessToken]);
+	}, [accessToken, refreshToken]);
 
 	useEffect(() => {
 		if (accessToken !== '') {
-			getTopSongs(accessToken).then(response => {
+			getTopSongs(accessToken, refreshToken).then(response => {
 				setTopSongs(response.data.items);
 			});
 		}
-	}, [accessToken]);
+	}, [accessToken, refreshToken]);
 
 	return (
 		<main>

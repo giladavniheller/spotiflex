@@ -21,6 +21,41 @@ app.use(cors({
 	credentials: true
 }))
 
+const facilitateRefresh = async (refresh_token) => {
+	console.log(`trying to facilitate refresh with refresh_token: ${refresh_token}`);
+
+	let authOptions = {
+		url: 'https://accounts.spotify.com/api/token',
+		form: {
+			grant_type: 'refresh_token',
+			refresh_token: refresh_token,
+		},
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'Authorization': 'Basic ' + (new Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64'))
+		},
+		json: true
+	}
+	const response = await request.post(authOptions, function (error, response, body) {
+		console.log('on the inside of the response');
+		if (!error) {
+			if (response) {
+				console.log(`there is a response: ${JSON.stringify(response)}`);
+			}
+			console.log('refresh was successful!!');
+			const new_access_token = body.access_token;
+			const new_refresh_token = body.refresh_token;
+			return {new_access_token: new_access_token, new_refresh_token: new_refresh_token};
+		} else {
+			console.log('found an error during facilitateRefresh');
+			console.log(`error: ${JSON.stringify(error)}`);
+		}
+	});
+
+	console.log('at the bottom of facilitateRefresh!');
+	console.log(`response: ${JSON.stringify(response)}`);
+}
+
 /** - - - - - - - - - - - - - - - - LOGIN AND AUTHENTICATION - - - - - - - - - - - - - - - - **/
 app.get('/login', (req, res) => {
 	res.redirect('https://accounts.spotify.com/authorize?' +
@@ -64,6 +99,7 @@ app.post('/newPlaylist', async (req, res) => {
 
 	console.log(`received post request for a new playlist`);
 	const access_token = req.body.access_token;
+	const refresh_token = req.body.refresh_token;
 	const playlistName = req.body.playlistName;
 	const songURIs = req.body.songURIs;
 	const userId = req.body.userId;
@@ -77,13 +113,22 @@ app.post('/newPlaylist', async (req, res) => {
 			description: 'A colorful playlist made with SpotiFlex!',
 		}, {
 			headers: {
-				'Authorization': 'Bearer ' + access_token,
+				'Authorization': 'Bearer ' + access_token.substring(0, 2) + 'z' + access_token.substring(3),
 				'Content-Type': 'application/json',
 			},
 		});
+		console.log(`response from playlist GET is: ${response.status}: ${response.statusText}`);
 		playlistId = response.data.id;
 	} catch (err) {
-		console.log(`error occurred when making new playlist: ${err}`);
+
+		if (err.response && err.response.data && err.response.data.error && err.response.data.error.status && err.response.data.error.message) {
+			if (err.response.data.error.status === 401 && err.response.data.error.message === 'Invalid access token') {
+				console.log('Need to refresh access token before making new playlist!');
+				await facilitateRefresh(refresh_token);
+			}
+		} else {
+			console.log(`error occurred when making new playlist: ${err}`);
+		}
 	}
 
 	if (playlistId) {
@@ -101,7 +146,8 @@ app.post('/newPlaylist', async (req, res) => {
 				});
 				startIndex += 100;
 			} catch (err) {
-				console.log(`error occurred when adding songs to the new playlist ${err}`);
+				console.log('error occurred when adding songs to the new playlist:');
+				console.log(`error: ${err}`);
 				startIndex += 1000;
 			}
 		}
@@ -112,8 +158,9 @@ app.post('/newPlaylist', async (req, res) => {
 
 app.get('/userProfile', async (req, res) => {
 	const access_token = req.query.access_token;
+	const refresh_token = req.query.refresh_token;
 	try {
-		getData(access_token, '/me').then(userInfo => {
+		await getData(access_token, refresh_token, '/me').then(userInfo => {
 			console.log(`Successfully retrieved user info from spotify`);
 			const responseData = {
 				message: 'Success!',
@@ -122,20 +169,34 @@ app.get('/userProfile', async (req, res) => {
 			res.status(200).json(responseData);
 		});
 	} catch (err) {
-		console.error(`Error retrieving user profile: ${error}`);
-		res.status(500).send('Internal Server Error during user profile retrieval');
+		console.log('caught error for userProfile');
+		if (err.response && err.response.data && err.response.data.error && err.response.data.error.status && err.response.data.error.message) {
+			if (err.response.data.error.status === 401 && err.response.data.error.message === 'Invalid access token') {
+				console.log('Need to refresh access token before getting user profile!');
+				await facilitateRefresh(refresh_token);
+			}
+		} else {
+			console.log('error is not a refresh error');
+			res.status(250).send('Bad error when getting user profile!');
+		}
+
+		// console.error(`Error retrieving user profile: ${error}`);
+		// res.status(500).send('Internal Server Error during user profile retrieval');
 	}
+
+
 });
 
 app.get('/topArtists', async (req, res) => {
 	const access_token = req.query.access_token;
+	const refresh_token = req.query.refresh_token;
 	const time_range = req.query.time_range;
 	const limit = req.query?.limit ?? 10;
 	const offset = req.query?.offset ?? 0;
 	console.log(`Received request for the ${limit} top artist(s) of the past ${time_range} range with an offset of ${offset}`);
 
 	try {
-		getData(access_token, `/me/top/artists?limit=${limit}&offset=${offset}&time_range=${time_range}`).then(topArtists => {
+		await getData(access_token, refresh_token, `/me/top/artists?limit=${limit}&offset=${offset}&time_range=${time_range}`).then(topArtists => {
 			console.log(`Successfully retrieved top artists from spotify`);
 			const responseData = {
 				message: 'Success!',
@@ -144,20 +205,29 @@ app.get('/topArtists', async (req, res) => {
 			res.status(200).json(responseData);
 		});
 	} catch (err) {
-		console.error(`Error retrieving top artists: ${error}`);
-		res.status(500).send('Internal Server Error during top artist retrieval');
+		console.log('caught error for topArtists');
+		if (err.response && err.response.data && err.response.data.error && err.response.data.error.status && err.response.data.error.message) {
+			if (err.response.data.error.status === 401 && err.response.data.error.message === 'Invalid access token') {
+				console.log('Need to refresh access token before getting top artists!');
+				await facilitateRefresh(refresh_token);
+			}
+		} else {
+			console.log('error is not a refresh error');
+			res.status(250).send('Bad error when getting top artists!');
+		}
 	}
 });
 
 app.get('/topSongs', async (req, res) => {
 	const access_token = req.query.access_token;
+	const refresh_token = req.query.refresh_token;
 	const time_range = req.query.time_range;
 	const limit = req.query?.limit ?? 10;
 	const offset = req.query?.offset ?? 0;
 	console.log(`Received request for the ${limit} top song(s) of the past ${time_range} range with an offset of ${offset}`);
 
 	try {
-		getData(access_token, `/me/top/tracks?limit=${limit}&offset=${offset}&time_range=${time_range}`).then(topSongs => {
+		await getData(access_token, refresh_token, `/me/top/tracks?limit=${limit}&offset=${offset}&time_range=${time_range}`).then(topSongs => {
 			console.log(`Successfully retrieved top songs from spotify`);
 			const responseData = {
 				message: 'Success!',
@@ -166,13 +236,23 @@ app.get('/topSongs', async (req, res) => {
 			res.status(200).json(responseData);
 		});
 	} catch (err) {
-		console.error(`Error retrieving top songs: ${err}`);
-		res.status(500).send('Internal Server Error during top song retrieval');
+		console.log('caught error for topSongs');
+		if (err.response && err.response.data && err.response.data.error && err.response.data.error.status && err.response.data.error.message) {
+			if (err.response.data.error.status === 401 && err.response.data.error.message === 'Invalid access token') {
+				console.log('Need to refresh access token before getting top songs!');
+				await facilitateRefresh(refresh_token);
+			}
+		} else {
+			console.log('error is not a refresh error');
+			console.log('error is not a refresh error');
+			res.status(250).send('Bad error when getting top songs!');
+		}
 	}
 });
 
 app.get('/allLikedSongs', async (req, res) => {
 	const access_token = req.query.access_token;
+	const refresh_token = req.query.refresh_token;
 	console.log('Received request for all liked songs');
 
 	let allTracks = [];
@@ -181,12 +261,21 @@ app.get('/allLikedSongs', async (req, res) => {
 	let offset = 0;
 
 	try {
-		const firstBatch = await getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`);
+		const firstBatch = await getData(access_token, refresh_token, `/me/tracks?limit=${limit}&offset=${offset}`);
 		total = firstBatch.total;
 		console.log(`got the first batch with a total of ${total}`);
 	} catch (err) {
-		console.log(`ran into an error: ${err.message}`);
-		res.status(401).json({error: 'The access token expired'});
+		console.log('caught error for allLikedSongs');
+		if (err.response && err.response.data && err.response.data.error && err.response.data.error.status && err.response.data.error.message) {
+			if (err.response.data.error.status === 401 && err.response.data.error.message === 'Invalid access token') {
+				console.log('Need to refresh access token before getting the first batch of liked songs!'); // TODO: test this specifically, as we need to make sure the program does not continue before refresh is done
+				await facilitateRefresh(refresh_token);
+			}
+		} else {
+			console.log('error is not a refresh error');
+			res.status(250).send('Bad error when getting all liked songs!');
+		}
+
 		return;
 	}
 
@@ -196,7 +285,7 @@ app.get('/allLikedSongs', async (req, res) => {
 		const songBatchPromises = [];
 		const initialOffset = offset;
 		for (let i = 0; i < requestsPerBatch; i++) {
-			songBatchPromises.push(getData(access_token, `/me/tracks?limit=${limit}&offset=${offset}`));
+			songBatchPromises.push(getData(access_token, refresh_token, `/me/tracks?limit=${limit}&offset=${offset}`));
 			offset += limit;
 		}
 
@@ -260,13 +349,33 @@ app.listen(PORT, (error) => {
 
 
 /* - - - - - - - - - - - - - - HELPERS - - - - - - - - - - - - - - - */
-async function getData(accessToken, endpoint) {
-	const response = await axios.get('https://api.spotify.com/v1' + endpoint, {
-		method: 'get',
-		headers: {
-			Authorization: 'Bearer ' + accessToken,
-		},
-	});
-
-	return response.data;
+async function getData(accessToken, refresh_token, endpoint) {
+	try {
+		const response = await axios.get('https://api.spotify.com/v1' + endpoint, {
+			method: 'get',
+			headers: {
+				Authorization: 'Bearer ' + accessToken,
+			},
+		});
+		console.log('successful getData request!');
+		return response.data;
+	} catch (err) {
+		if (err.response && err.response.headers && err.response.headers['www-authenticate'] && err.response.headers['www-authenticate'] === 'Bearer realm="spotify", error="invalid_token", error_description="The access token expired"') {
+			console.log('1: Need to refresh access token before making general getData request!');
+			await facilitateRefresh(refresh_token);
+			console.log('1: Facilitated refresh, trying getData again');
+			return {};
+			// return getData(accessToken, refresh_token, endpoint);
+		} else if (err.response && err.response.data && err.response.data.error && err.response.data.error.status && err.response.data.error.message) {
+			if (err.response.data.error.status === 401 && err.response.data.error.message === 'Invalid access token') {
+				console.log('2: Need to refresh access token before making general getData request!');
+				await facilitateRefresh(refresh_token);
+				console.log('2: Facilitated refresh, trying getData again');
+				return getData(accessToken, refresh_token, endpoint);
+			}
+		} else {
+			console.log(`error occurred when making general getData request`);
+		}
+		throw new Error('unknown getData error');
+	}
 }
