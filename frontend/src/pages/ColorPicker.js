@@ -124,10 +124,10 @@ const ColorPicker = () => {
 			} else {
 				try {
 					console.log('Could not find liked songs in local storage, calling API!')
-					getAllLikedSongs(access_token, refresh_token).then(response => {
-						setAllLikedSongs(response.data);
-						localStorage.setItem('allSongs', JSON.stringify(response.data));
-						console.log(response.data)
+					getAllLikedSongs(access_token, refresh_token).then(allLikedSongsResponse => {
+						setAllLikedSongs(allLikedSongsResponse);
+						localStorage.setItem('allSongs', JSON.stringify(allLikedSongsResponse));
+						console.log(allLikedSongsResponse)
 					});
 				} catch (err) {
 					console.log(`uh oh, received error ${err}`)
@@ -408,7 +408,7 @@ const ColorPicker = () => {
 											})
 											console.log(filteredSongs);
 
-											setColorApplicableSongs(filteredSongs);
+											// setColorApplicableSongs(filteredSongs);
 										} else {
 											console.log('Need to prep the album colors...');
 											await generateColorProfiles();

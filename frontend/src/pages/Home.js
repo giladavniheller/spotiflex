@@ -56,24 +56,24 @@ const Home = () => {
 
 	useEffect(() => {
 		if (accessToken !== '') {
-			getUserProfile(accessToken, refreshToken).then(response => {
-				setUserProfile(response.data);
+			getUserProfile(accessToken, refreshToken).then(userProfileResponse => {
+				setUserProfile(userProfileResponse);
 			});
 		}
 	}, [accessToken, refreshToken]);
 
 	useEffect(() => {
 		if (accessToken !== '') {
-			getTopArtists(accessToken, refreshToken).then(response => {
-				setTopArtists(response.data.items);
+			getTopArtists(accessToken, refreshToken).then((topArtistsResponse) => {
+				setTopArtists(topArtistsResponse[0] ?? []);
 			});
 		}
 	}, [accessToken, refreshToken]);
 
 	useEffect(() => {
 		if (accessToken !== '') {
-			getTopSongs(accessToken, refreshToken).then(response => {
-				setTopSongs(response.data.items);
+			getTopSongs(accessToken, refreshToken).then(topSongsResponse => {
+				setTopSongs(topSongsResponse[0] ?? []);
 			});
 		}
 	}, [accessToken, refreshToken]);

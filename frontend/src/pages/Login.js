@@ -61,6 +61,7 @@ const Login = () => {
 							onClick={() => {
 								localStorage.removeItem('access_token');
 								localStorage.removeItem('refresh_token');
+								// signIn();
 								window.location.href = 'http://localhost:5000/login'
 							}}
 						/>
